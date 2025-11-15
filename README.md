@@ -56,7 +56,7 @@ python app.py
 
 2. Open your browser and navigate to:
 ```
-http://localhost:5000
+http://localhost:8080
 ```
 
 3. Upload your old photo:

@@ -118,6 +118,11 @@ def download_file(filename):
 
 
 if __name__ == '__main__':
-    print("Starting Photo Restoration Web App...")
-    print("Note: First restoration may take longer as the model downloads...")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    print("=" * 60)
+    print("Photo Restoration Web App - Starting...")
+    print("=" * 60)
+    print("\nOpen your browser and navigate to:")
+    print("  http://localhost:8080")
+    print("\nNote: First restoration may take longer as the model downloads...")
+    print("=" * 60)
+    app.run(debug=True, host='0.0.0.0', port=8080)
