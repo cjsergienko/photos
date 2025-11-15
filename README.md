@@ -1,0 +1,3 @@
+# photos
+
+Photo management project
