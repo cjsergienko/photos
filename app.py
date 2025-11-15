@@ -3,9 +3,6 @@ from flask import Flask, render_template, request, send_file, jsonify
 from werkzeug.utils import secure_filename
 import cv2
 import numpy as np
-import torch
-from basicsr.archs.rrdbnet_arch import RRDBNet
-from realesrgan import RealESRGANer
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -19,33 +16,10 @@ os.makedirs(app.config['RESULT_FOLDER'], exist_ok=True)
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp'}
 
-# Initialize the AI upsampler (lazy loaded)
-upsampler = None
-
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-def get_upsampler():
-    """Lazy load the Real-ESRGAN upsampler"""
-    global upsampler
-    if upsampler is None:
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
-
-        upsampler = RealESRGANer(
-            scale=2,
-            model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth',
-            model=model,
-            tile=400,
-            tile_pad=10,
-            pre_pad=0,
-            half=False if device == 'cpu' else True,
-            device=device
-        )
-    return upsampler
 
 
 def fast_enhance(img):
