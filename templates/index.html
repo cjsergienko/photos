@@ -357,6 +357,13 @@
             </div>
 
             <div id="singleResult" style="display: none;">
+                <div id="batchNavigation" style="display: none; margin-bottom: 20px; text-align: center;">
+                    <button id="backToGalleryBtn" style="background: #666; padding: 10px 20px; margin-right: 10px;">← Back to Gallery</button>
+                    <span id="imageCounter" style="color: #666; font-size: 0.9rem;"></span>
+                    <button id="prevImageBtn" style="background: #667eea; padding: 10px 20px; margin-left: 10px;">← Previous</button>
+                    <button id="nextImageBtn" style="background: #667eea; padding: 10px 20px; margin-left: 5px;">Next →</button>
+                </div>
+
                 <div class="comparison">
                     <div class="image-container">
                         <h3>Original</h3>
@@ -367,41 +374,41 @@
                         <canvas id="restoredCanvas" style="width: 100%; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);"></canvas>
                     </div>
                 </div>
+
+                <div class="settings" style="margin-top: 30px;">
+                    <h3 style="margin-bottom: 15px; color: #333;">Fine-Tune Adjustments</h3>
+
+                    <div class="setting-item">
+                        <label>Contrast: <span class="slider-value" id="liveContrastValue">50</span></label>
+                        <input type="range" id="liveContrastSlider" min="0" max="100" value="50">
+                    </div>
+
+                    <div class="setting-item">
+                        <label>Noise Reduction: <span class="slider-value" id="liveDenoiseValue">50</span></label>
+                        <input type="range" id="liveDenoiseSlider" min="0" max="100" value="50">
+                    </div>
+
+                    <div class="setting-item">
+                        <label>Sharpness: <span class="slider-value" id="liveSharpenValue">50</span></label>
+                        <input type="range" id="liveSharpenSlider" min="0" max="100" value="50">
+                    </div>
+
+                    <div class="setting-item">
+                        <label>Color Saturation: <span class="slider-value" id="liveSaturationValue">50</span></label>
+                        <input type="range" id="liveSaturationSlider" min="0" max="100" value="50">
+                    </div>
+
+                    <div class="setting-item">
+                        <label>Brightness: <span class="slider-value" id="liveBrightnessValue">50</span></label>
+                        <input type="range" id="liveBrightnessSlider" min="0" max="100" value="50">
+                    </div>
+
+                    <button id="liveResetBtn" style="background: #666; margin-top: 10px; padding: 10px 20px; font-size: 0.9rem;">Reset Adjustments</button>
+                </div>
+
+                <button class="download-btn" id="downloadBtn">Download Final Result</button>
+                <button id="newPhotoBtn" onclick="location.reload()">Restore Another Photo</button>
             </div>
-
-            <div class="settings" style="margin-top: 30px;">
-                <h3 style="margin-bottom: 15px; color: #333;">Fine-Tune Adjustments</h3>
-
-                <div class="setting-item">
-                    <label>Contrast: <span class="slider-value" id="liveContrastValue">50</span></label>
-                    <input type="range" id="liveContrastSlider" min="0" max="100" value="50">
-                </div>
-
-                <div class="setting-item">
-                    <label>Noise Reduction: <span class="slider-value" id="liveDenoiseValue">50</span></label>
-                    <input type="range" id="liveDenoiseSlider" min="0" max="100" value="50">
-                </div>
-
-                <div class="setting-item">
-                    <label>Sharpness: <span class="slider-value" id="liveSharpenValue">50</span></label>
-                    <input type="range" id="liveSharpenSlider" min="0" max="100" value="50">
-                </div>
-
-                <div class="setting-item">
-                    <label>Color Saturation: <span class="slider-value" id="liveSaturationValue">50</span></label>
-                    <input type="range" id="liveSaturationSlider" min="0" max="100" value="50">
-                </div>
-
-                <div class="setting-item">
-                    <label>Brightness: <span class="slider-value" id="liveBrightnessValue">50</span></label>
-                    <input type="range" id="liveBrightnessSlider" min="0" max="100" value="50">
-                </div>
-
-                <button id="liveResetBtn" style="background: #666; margin-top: 10px; padding: 10px 20px; font-size: 0.9rem;">Reset Adjustments</button>
-            </div>
-
-            <button class="download-btn" id="downloadBtn">Download Final Result</button>
-            <button id="newPhotoBtn" onclick="location.reload()">Restore Another Photo</button>
         </div>
     </div>
 
@@ -435,6 +442,8 @@
         let selectedFiles = [];
         let imageProcessor = null;
         let processedResults = [];
+        let currentImageIndex = 0;
+        let imageSettings = {}; // Store slider values for each image
 
         // Update all slider value displays
         Object.keys(sliders).forEach(key => {
@@ -479,6 +488,69 @@
             const brightness = parseInt(liveSliders.brightness.slider.value);
 
             imageProcessor.applyAdjustments(contrast, denoise, sharpen, saturation, brightness);
+
+            // Save settings for current image
+            if (processedResults.length > 0) {
+                const currentImage = processedResults[currentImageIndex];
+                if (currentImage) {
+                    imageSettings[currentImage.filename] = { contrast, denoise, sharpen, saturation, brightness };
+                }
+            }
+        }
+
+        function showImageDetail(index) {
+            currentImageIndex = index;
+            const result = processedResults[index];
+
+            // Show single result view
+            document.getElementById('batchResults').style.display = 'none';
+            document.getElementById('singleResult').style.display = 'block';
+
+            // Show navigation if batch mode
+            if (processedResults.length > 1) {
+                document.getElementById('batchNavigation').style.display = 'block';
+                document.getElementById('imageCounter').textContent = `Image ${index + 1} of ${processedResults.length}`;
+                document.getElementById('prevImageBtn').disabled = index === 0;
+                document.getElementById('nextImageBtn').disabled = index === processedResults.length - 1;
+            }
+
+            // Load images
+            document.getElementById('originalImg').src = result.original;
+
+            const canvas = document.getElementById('restoredCanvas');
+            const enhancedImg = new Image();
+            enhancedImg.crossOrigin = 'anonymous';
+
+            enhancedImg.onload = () => {
+                imageProcessor = new ImageProcessor(canvas, enhancedImg);
+
+                // Load saved settings for this image or use defaults
+                const settings = imageSettings[result.filename] || {
+                    contrast: 50, denoise: 50, sharpen: 50, saturation: 50, brightness: 50
+                };
+
+                // Update sliders to saved values
+                liveSliders.contrast.slider.value = settings.contrast;
+                liveSliders.contrast.value.textContent = settings.contrast;
+                liveSliders.denoise.slider.value = settings.denoise;
+                liveSliders.denoise.value.textContent = settings.denoise;
+                liveSliders.sharpen.slider.value = settings.sharpen;
+                liveSliders.sharpen.value.textContent = settings.sharpen;
+                liveSliders.saturation.slider.value = settings.saturation;
+                liveSliders.saturation.value.textContent = settings.saturation;
+                liveSliders.brightness.slider.value = settings.brightness;
+                liveSliders.brightness.value.textContent = settings.brightness;
+
+                updateLivePreview();
+            };
+
+            enhancedImg.src = result.enhanced;
+        }
+
+        function showGallery() {
+            document.getElementById('singleResult').style.display = 'none';
+            document.getElementById('batchResults').style.display = 'block';
+            document.getElementById('batchNavigation').style.display = 'none';
         }
 
         // Click to upload
@@ -574,49 +646,30 @@
                 // Show appropriate result view
                 if (processedResults.length === 1) {
                     // Single image view with sliders
-                    document.getElementById('singleResult').style.display = 'block';
-                    document.getElementById('batchResults').style.display = 'none';
                     document.getElementById('resultSummary').textContent = 'Adjust the sliders below to fine-tune the result in real-time';
-
-                    const result = processedResults[0];
-                    document.getElementById('originalImg').src = result.original;
-
-                    const canvas = document.getElementById('restoredCanvas');
-                    const enhancedImg = new Image();
-                    enhancedImg.crossOrigin = 'anonymous';
-
-                    enhancedImg.onload = () => {
-                        imageProcessor = new ImageProcessor(canvas, enhancedImg);
-                        updateLivePreview();
-                    };
-
-                    enhancedImg.onerror = () => {
-                        throw new Error('Failed to load enhanced image');
-                    };
-
-                    enhancedImg.src = result.enhanced;
-
+                    showImageDetail(0);
                 } else {
                     // Batch gallery view
                     document.getElementById('singleResult').style.display = 'none';
                     document.getElementById('batchResults').style.display = 'block';
-                    document.getElementById('resultSummary').textContent = `Successfully enhanced ${processedResults.length} photos! Click images to download individually or use the button below to download all.`;
+                    document.getElementById('resultSummary').textContent = `Successfully enhanced ${processedResults.length} photos! Click any image to adjust it individually.`;
 
                     const galleryGrid = document.getElementById('galleryGrid');
                     galleryGrid.innerHTML = '';
 
-                    processedResults.forEach(result => {
+                    processedResults.forEach((result, index) => {
                         const card = document.createElement('div');
-                        card.style.cssText = 'background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); cursor: pointer;';
+                        card.style.cssText = 'background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s;';
+                        card.onmouseenter = (e) => e.currentTarget.style.transform = 'translateY(-5px)';
+                        card.onmouseleave = (e) => e.currentTarget.style.transform = 'translateY(0)';
                         card.innerHTML = `
                             <img src="${result.enhanced}" style="width: 100%; height: 200px; object-fit: cover;">
                             <div style="padding: 10px;">
                                 <p style="margin: 0; font-size: 0.9rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${result.filename}</p>
+                                <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #999;">Click to adjust →</p>
                             </div>
                         `;
-                        card.onclick = () => {
-                            window.location.href = `/download/enhanced_${result.filename}`;
-                        };
+                        card.onclick = () => showImageDetail(index);
                         galleryGrid.appendChild(card);
                     });
                 }
@@ -632,14 +685,30 @@
             }
         });
 
+        // Navigation buttons
+        document.getElementById('backToGalleryBtn').addEventListener('click', showGallery);
+        document.getElementById('prevImageBtn').addEventListener('click', () => {
+            if (currentImageIndex > 0) {
+                showImageDetail(currentImageIndex - 1);
+            }
+        });
+        document.getElementById('nextImageBtn').addEventListener('click', () => {
+            if (currentImageIndex < processedResults.length - 1) {
+                showImageDetail(currentImageIndex + 1);
+            }
+        });
+
         document.getElementById('downloadBtn').addEventListener('click', () => {
             if (!imageProcessor) return;
+
+            const currentResult = processedResults[currentImageIndex];
+            const filename = currentResult ? `enhanced_${currentResult.filename}` : 'restored_photo.jpg';
 
             imageProcessor.getBlob((blob) => {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'restored_photo.jpg';
+                a.download = filename;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
