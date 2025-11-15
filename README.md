@@ -18,7 +18,37 @@ AI-powered web application for restoring and enhancing old photos using Real-ESR
 - Upscales images by 2x while preserving quality
 - Fast model optimized for quick processing (~11MB download)
 
-## Installation
+## Quick Start (Recommended)
+
+The easiest way to run this application is using Claude Code:
+
+1. **Clone this repository:**
+```bash
+git clone https://github.com/cjsergienko/photos.git
+cd photos
+```
+
+2. **Download and install Claude Code:**
+   - Visit [claude.com/claude-code](https://claude.com/claude-code)
+   - Download for your operating system
+   - Install and open Claude Code in this directory
+
+3. **Ask Claude Code to run the application:**
+```
+Run the photo restoration app
+```
+
+Claude Code will automatically:
+- Create a virtual environment
+- Install all dependencies
+- Start the web server
+- Open the app at http://localhost:8080
+
+**Note**: On first photo upload, the app will download the AI model (~11MB) which takes 10-30 seconds.
+
+## Manual Installation (Advanced)
+
+If you prefer to set up manually:
 
 ### Prerequisites
 
@@ -27,53 +57,29 @@ AI-powered web application for restoring and enhancing old photos using Real-ESR
 - 4GB+ RAM recommended
 - Optional: NVIDIA GPU with CUDA for faster processing
 
-### Setup
+### Setup Steps
 
-1. Clone or navigate to this repository:
-```bash
-cd /path/to/photos
-```
-
-2. Create a virtual environment (recommended):
-```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+1. Clone the repository and navigate to it
+2. Create a virtual environment: `python3 -m venv venv`
+3. Activate it: `source venv/bin/activate` (On Windows: `venv\Scripts\activate`)
+4. Install dependencies: `pip install -r requirements.txt`
+5. Run the app: `python app.py`
+6. Open http://localhost:8080 in your browser
 
 **Note**: First time setup may take several minutes as it downloads PyTorch and other large dependencies.
 
-**Note**: On first photo upload, the app will download the AI model (~11MB) which takes 10-30 seconds.
+## How to Use
 
-## Usage
+1. Open your browser to **http://localhost:8080**
 
-1. Start the web server:
-```bash
-python app.py
-```
-
-2. Open your browser and navigate to:
-```
-http://localhost:8080
-```
-
-3. Upload your old photo:
+2. **Upload your old photo:**
    - Click the upload area or drag and drop your image
    - Supported formats: PNG, JPG, JPEG, GIF, BMP
    - Max file size: 16MB
 
-4. Adjust the quality slider:
-   - **10-20**: Fast processing, lower quality (good for testing)
-   - **25-35**: Balanced (recommended)
-   - **40-45**: Highest quality, slower processing
+3. **Click "Upload and Restore"** and wait for processing
 
-5. Click "Upload and Restore" and wait for processing
-
-6. Download your restored photo!
+4. **Download your restored photo!**
 
 ## Quality Settings Explained
 
