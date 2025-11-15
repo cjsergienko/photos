@@ -6,8 +6,11 @@ import numpy as np
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['RESULT_FOLDER'] = 'results'
+
+# Use /tmp for file storage on Render (read-only filesystem)
+base_dir = '/tmp' if os.environ.get('RENDER') else '.'
+app.config['UPLOAD_FOLDER'] = os.path.join(base_dir, 'uploads')
+app.config['RESULT_FOLDER'] = os.path.join(base_dir, 'results')
 
 # Create necessary directories
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -118,11 +121,19 @@ def upload_file():
         # Step 1: Fast OpenCV enhancement (runs once, server-side)
         print(f"Processing {filename} with OpenCV...")
         img = cv2.imread(filepath)
+
+        if img is None:
+            return jsonify({'error': 'Failed to read image file. Please ensure it is a valid image.'}), 400
+
         enhanced = fast_enhance(img)
 
         # Save enhanced version
         result_path = os.path.join(app.config['RESULT_FOLDER'], f'enhanced_{filename}')
-        cv2.imwrite(result_path, enhanced)
+        success = cv2.imwrite(result_path, enhanced)
+
+        if not success:
+            return jsonify({'error': 'Failed to save enhanced image'}), 500
+
         print(f"Enhancement complete!")
 
         return jsonify({
