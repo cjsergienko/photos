@@ -1,11 +1,13 @@
 import os
+import zipfile
+import io
 from flask import Flask, render_template, request, send_file, jsonify
 from werkzeug.utils import secure_filename
 import cv2
 import numpy as np
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max total upload size
 
 # Use /tmp for file storage on Render (read-only filesystem)
 base_dir = '/tmp' if os.environ.get('RENDER') else '.'
@@ -100,53 +102,78 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    """Handle file upload and restoration"""
+    """Handle single or batch file upload and restoration"""
     try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file provided'}), 400
+        if 'files' not in request.files:
+            return jsonify({'error': 'No files provided'}), 400
 
-        file = request.files['file']
+        files = request.files.getlist('files')
 
-        if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
+        if not files or all(f.filename == '' for f in files):
+            return jsonify({'error': 'No files selected'}), 400
 
-        if not allowed_file(file.filename):
-            return jsonify({'error': 'Invalid file type. Allowed: PNG, JPG, JPEG, GIF, BMP'}), 400
+        results = []
+        errors = []
 
-        # Save uploaded file
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+        for file in files:
+            if file.filename == '':
+                continue
 
-        # Step 1: Fast OpenCV enhancement (runs once, server-side)
-        print(f"Processing {filename} with OpenCV...")
-        img = cv2.imread(filepath)
+            if not allowed_file(file.filename):
+                errors.append(f'{file.filename}: Invalid file type')
+                continue
 
-        if img is None:
-            return jsonify({'error': 'Failed to read image file. Please ensure it is a valid image.'}), 400
+            try:
+                # Save uploaded file
+                filename = secure_filename(file.filename)
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(filepath)
 
-        enhanced = fast_enhance(img)
+                # Step 1: Fast OpenCV enhancement (runs once, server-side)
+                print(f"Processing {filename} with OpenCV...")
+                img = cv2.imread(filepath)
 
-        # Save enhanced version
-        result_path = os.path.join(app.config['RESULT_FOLDER'], f'enhanced_{filename}')
-        success = cv2.imwrite(result_path, enhanced)
+                if img is None:
+                    errors.append(f'{filename}: Failed to read image')
+                    continue
 
-        if not success:
-            return jsonify({'error': 'Failed to save enhanced image'}), 500
+                enhanced = fast_enhance(img)
 
-        print(f"Enhancement complete!")
+                # Save enhanced version
+                result_path = os.path.join(app.config['RESULT_FOLDER'], f'enhanced_{filename}')
+                success = cv2.imwrite(result_path, enhanced)
+
+                if not success:
+                    errors.append(f'{filename}: Failed to save enhanced image')
+                    continue
+
+                print(f"Enhancement complete for {filename}!")
+
+                results.append({
+                    'filename': filename,
+                    'original': f'/uploads/{filename}',
+                    'enhanced': f'/results/enhanced_{filename}'
+                })
+
+            except Exception as e:
+                errors.append(f'{file.filename}: {str(e)}')
+                continue
+
+        if not results:
+            return jsonify({'error': 'No images were processed successfully', 'errors': errors}), 400
 
         return jsonify({
             'success': True,
-            'original': f'/uploads/{filename}',
-            'enhanced': f'/results/enhanced_{filename}',
-            'message': 'Enhancement complete! Adjust sliders for fine-tuning.'
+            'results': results,
+            'errors': errors if errors else None,
+            'count': len(results),
+            'message': f'Successfully enhanced {len(results)} photo(s)!'
         })
 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': f'Error processing image: {str(e)}'}), 500
+        return jsonify({'error': f'Error processing images: {str(e)}'}), 500
 
 
 @app.route('/uploads/<filename>')
@@ -169,6 +196,43 @@ def download_file(filename):
         as_attachment=True,
         download_name=filename
     )
+
+
+@app.route('/download-all', methods=['POST'])
+def download_all():
+    """Download all enhanced images as a ZIP file"""
+    try:
+        data = request.get_json()
+        filenames = data.get('filenames', [])
+
+        if not filenames:
+            return jsonify({'error': 'No filenames provided'}), 400
+
+        # Create a ZIP file in memory
+        memory_file = io.BytesIO()
+
+        with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for filename in filenames:
+                enhanced_filename = f'enhanced_{filename}'
+                filepath = os.path.join(app.config['RESULT_FOLDER'], enhanced_filename)
+
+                if os.path.exists(filepath):
+                    # Add file to zip with a clean name
+                    zf.write(filepath, enhanced_filename)
+
+        memory_file.seek(0)
+
+        return send_file(
+            memory_file,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name='enhanced_photos.zip'
+        )
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Error creating ZIP file: {str(e)}'}), 500
 
 
 if __name__ == '__main__':
