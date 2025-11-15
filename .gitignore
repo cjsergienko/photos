@@ -39,3 +39,4 @@ Thumbs.db
 # DeOldify models (downloaded automatically)
 models/
 .fastai/
+gfpgan/
