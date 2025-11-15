@@ -1,24 +1,38 @@
 # Photo Restoration Web App
 
-Web application for restoring and enhancing old photos using advanced image processing.
+Web application for restoring and enhancing old photos using AI neural networks combined with real-time adjustments.
 
 ## Features
 
-- **Fast Photo Enhancement**: Uses OpenCV image processing (2-5 seconds per photo!)
+- **AI-Powered Restoration**: Real-ESRGAN neural network for superior image quality
+- **Real-Time Adjustments**: Live slider controls for instant visual feedback
+- **Two-Step Architecture**: AI enhancement first, then fine-tune in your browser
 - **Web Interface**: Simple, user-friendly drag-and-drop interface
-- **Adjustable Quality**: Control enhancement intensity with the quality slider
-- **Side-by-Side Comparison**: View original and restored photos together
+- **Customizable Results**: 5 adjustment sliders (Contrast, Denoise, Sharpen, Saturation, Brightness)
+- **Side-by-Side Comparison**: View original and AI-restored photos together
 - **Download Results**: Save your restored photos locally
-- **No Downloads Required**: Works instantly, no model downloads needed
 
 ## How It Works
 
-**OpenCV-based Enhancement Pipeline:**
-- **Adaptive Contrast**: CLAHE algorithm improves brightness and contrast
-- **Noise Reduction**: Advanced denoising while preserving edges
-- **Sharpening**: Enhances details and textures
-- **Color Enhancement**: Boosts saturation for more vibrant photos
-- **Super Fast**: 2-5 seconds per photo (vs 5+ minutes with AI models)
+**Two-Step Restoration Process:**
+
+### Step 1: AI Enhancement (Server-Side)
+- **Real-ESRGAN Neural Network**: State-of-the-art super-resolution AI
+- Runs once when you upload your photo
+- Downloads AI model automatically on first run (~11MB)
+- Upscales and enhances image quality using deep learning
+- Processing time: First run ~30-60 seconds (model download), then ~5-10 seconds per photo
+
+### Step 2: Live Adjustments (Client-Side)
+- **Instant Browser-Based Processing**: No server round-trips needed
+- Adjust sliders and see results immediately (Canvas API)
+- **5 Control Sliders:**
+  - **Contrast**: Adjust image contrast
+  - **Noise Reduction**: Reduce grain and artifacts
+  - **Sharpness**: Enhance fine details
+  - **Color Saturation**: Boost or reduce color vibrancy
+  - **Brightness**: Fine-tune overall brightness
+- All adjustments happen in real-time in your browser
 
 ## Quick Start (Recommended)
 
@@ -74,72 +88,104 @@ If you prefer to set up manually:
    - Supported formats: PNG, JPG, JPEG, GIF, BMP
    - Max file size: 16MB
 
-3. **Click "Upload and Restore"** and wait for processing
+3. **Click "Upload and Restore"**
+   - AI will process your photo (5-10 seconds after model download)
+   - First run downloads the Real-ESRGAN model (~11MB)
 
-4. **Download your restored photo!**
+4. **Fine-tune with live sliders:**
+   - Adjust Contrast, Noise Reduction, Sharpness, Saturation, and Brightness
+   - See changes instantly in your browser
+   - No waiting, no server processing
 
-## Quality Settings Explained
+5. **Download your final result!**
 
-The quality slider controls the enhancement intensity:
+## Adjustment Tips
 
-- **Lower values (10-20)**: Subtle enhancement, preserves original look
-- **Medium values (25-35)**: Balanced enhancement (recommended)
-- **Higher values (40-45)**: Maximum enhancement, most dramatic results
+- **Contrast (50 = balanced)**: Lower for subtle look, higher for dramatic enhancement
+- **Noise Reduction (50 = moderate)**: Increase for grainy photos, decrease to preserve texture
+- **Sharpness (50 = moderate)**: Boost for blurry photos, but avoid over-sharpening
+- **Saturation (50 = normal)**: 0 = grayscale, 100 = vivid colors
+- **Brightness (50 = normal)**: Adjust for dark or overexposed photos
 
 ## Tips for Best Results
 
-1. **Scan at high resolution**: The better your input, the better the output
-2. **Start with medium quality**: Use slider value 30-35 for balanced results
-3. **Keep originals**: Always preserve your original scans
-4. **Adjust intensity**: If results look too processed, lower the quality slider
-5. **Compare before/after**: Use the side-by-side view to find the perfect setting
+1. **Scan at high resolution**: The better your input, the better the AI output
+2. **Let AI do the heavy lifting**: The neural network handles upscaling and enhancement
+3. **Use sliders for fine-tuning**: Adjust the AI result to your taste
+4. **Keep originals**: Always preserve your original scans
+5. **Reset and experiment**: Use the Reset button to try different slider combinations
+6. **Compare side-by-side**: View original vs enhanced to find the perfect settings
 
 ## Project Structure
 
 ```
 photos/
-├── app.py              # Flask web application
-├── requirements.txt    # Python dependencies
+├── app.py                   # Flask web application (AI processing)
+├── requirements.txt         # Python dependencies
 ├── templates/
-│   └── index.html     # Web interface
-├── uploads/           # Uploaded photos (created automatically)
-├── results/           # Restored photos (created automatically)
-└── README.md          # This file
+│   └── index.html          # Web interface with real-time controls
+├── static/
+│   └── imageProcessor.js   # Client-side image adjustment engine
+├── uploads/                # Uploaded photos (created automatically)
+├── results/                # AI-restored photos (created automatically)
+└── README.md               # This file
 ```
 
 ## Troubleshooting
 
-### Slow Processing
-If processing takes longer than 10 seconds:
-- Large images (>10MB) take longer
-- Try reducing image resolution before uploading
-- Close other applications to free up CPU
+### First Run Is Slow
+- The Real-ESRGAN model downloads automatically (~11MB)
+- This only happens once
+- Subsequent uploads are much faster (5-10 seconds)
+
+### Slow Internet Connection
+- Model download may take 30-60 seconds on slow connections
+- Be patient on the first upload
+- The model is cached for future use
+
+### Sliders Not Responding
+- Make sure you've completed the upload first
+- The AI must process the image before sliders become active
+- Refresh the page and try again if stuck
 
 ### Results Look Over-Processed
-- Lower the quality slider (try 20-25)
-- Some photos look better with subtle enhancement
-
-### No Visible Difference
-- Try increasing the quality slider (try 40-45)
-- Very dark or very bright photos may need manual adjustment first
+- Use the live sliders to reduce enhancement intensity
+- Lower Contrast, Sharpness, or Saturation
+- Try the Reset button to start from default settings
 
 ## Technologies Used
 
-- **OpenCV**: Advanced computer vision and image processing library
+### Server-Side (AI Processing)
+- **Real-ESRGAN**: State-of-the-art neural network for image super-resolution
+- **PyTorch**: Deep learning framework
 - **Flask**: Lightweight web framework
-- **NumPy**: Numerical computing library
+- **OpenCV**: Computer vision library
+- **NumPy**: Numerical computing
+
+### Client-Side (Live Adjustments)
+- **Canvas API**: Browser-based real-time image manipulation
+- **JavaScript**: Client-side image processing engine
+- **HTML5**: Modern web interface
 
 ## Image Processing Techniques
 
-- **CLAHE (Contrast Limited Adaptive Histogram Equalization)**: Improves local contrast
-- **Non-Local Means Denoising**: Reduces noise while preserving edges
-- **Unsharp Masking**: Enhances fine details and sharpness
-- **HSV Color Enhancement**: Boosts color saturation
+### AI Enhancement (Real-ESRGAN)
+- Deep neural network trained on millions of images
+- 2x upscaling with quality enhancement
+- Artifact reduction and detail restoration
+- Learned patterns for realistic image enhancement
+
+### Live Adjustments (Canvas API)
+- **Brightness**: Linear RGB adjustment
+- **Contrast**: Contrast curve around midpoint (128)
+- **Saturation**: HSV color space manipulation
+- **Sharpening**: CSS filter-based enhancement (optimized for performance)
 
 ## References
 
+- [Real-ESRGAN Paper](https://github.com/xinntao/Real-ESRGAN)
 - [OpenCV Documentation](https://docs.opencv.org/)
-- [CLAHE Algorithm](https://en.wikipedia.org/wiki/Adaptive_histogram_equalization)
+- [Canvas API Reference](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
 
 ## License
 
