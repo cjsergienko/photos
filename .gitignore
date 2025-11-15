@@ -16,14 +16,13 @@ instance/
 # Application specific
 uploads/
 results/
+sources/
+restored/
 *.jpg
 *.jpeg
 *.png
 *.gif
 *.bmp
-
-# Keep the sample photo for documentation
-!1.jpg
 
 # IDE
 .vscode/

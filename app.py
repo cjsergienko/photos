@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max total upload size
+app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024  # 1GB max total upload size
 
 # Use /tmp for file storage on Render (read-only filesystem)
 base_dir = '/tmp' if os.environ.get('RENDER') else '.'
