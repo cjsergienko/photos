@@ -31,10 +31,10 @@ def fast_enhance(img):
     """
     First step: Fast OpenCV-based enhancement
     This runs once on the server when the photo is uploaded
-    Applies balanced enhancement that can be fine-tuned with client-side sliders
+    Applies gentle enhancement that can be fine-tuned with client-side sliders
     """
-    # Apply moderate enhancement that serves as a good starting point
-    result = enhance_photo(img, contrast=50, denoise=50, sharpen=50, saturation=50, brightness=50)
+    # Apply gentle enhancement - less aggressive to reduce noise
+    result = enhance_photo(img, contrast=40, denoise=30, sharpen=25, saturation=45, brightness=50)
     return result
 
 
@@ -74,14 +74,12 @@ def enhance_photo(img, contrast=50, denoise=50, sharpen=50, saturation=50, brigh
         if h > 0:
             result = cv2.fastNlMeansDenoisingColored(result, None, h, h, 7, 21)
 
-    # Sharpen
+    # Sharpen (using gentler unsharp mask)
     if sharpen > 0:
         sharpen_strength = sharpen / 100.0
-        kernel = np.array([[-1,-1,-1],
-                          [-1, 9,-1],
-                          [-1,-1,-1]])
-        sharpened = cv2.filter2D(result, -1, kernel * sharpen_strength)
-        result = cv2.addWeighted(result, 1 - sharpen_strength * 0.5, sharpened, sharpen_strength * 0.5, 0)
+        # Use Gaussian blur for unsharp mask (smoother, less noise)
+        blurred = cv2.GaussianBlur(result, (0, 0), 3)
+        result = cv2.addWeighted(result, 1 + sharpen_strength * 0.5, blurred, -sharpen_strength * 0.5, 0)
 
     # Color saturation
     if saturation != 50:
