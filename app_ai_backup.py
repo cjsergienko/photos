@@ -1,20 +1,32 @@
 import os
 from flask import Flask, render_template, request, send_file, jsonify
 from werkzeug.utils import secure_filename
+from pathlib import Path
 import cv2
-import numpy as np
+import torch
+from basicsr.archs.rrdbnet_arch import RRDBNet
+from realesrgan import RealESRGANer
+from gfpgan import GFPGANer
+import warnings
+warnings.filterwarnings("ignore")
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['RESULT_FOLDER'] = 'results'
+app.config['MODEL_FOLDER'] = 'models'
 
 # Create necessary directories
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['RESULT_FOLDER'], exist_ok=True)
+os.makedirs(app.config['MODEL_FOLDER'], exist_ok=True)
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp'}
+
+# Initialize the restorer (will be loaded on first use)
+upsampler = None
+face_enhancer = None
 
 
 def allowed_file(filename):
@@ -22,42 +34,33 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def enhance_photo(img, intensity=1.0):
-    """
-    Enhance old photos using OpenCV
-    - Reduces noise
-    - Improves contrast and sharpness
-    - Enhances colors
-    - Much faster than AI models
-    """
-    # Convert to LAB color space for better processing
-    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-    l, a, b = cv2.split(lab)
+def get_restorer():
+    """Lazy load the restoration models"""
+    global upsampler, face_enhancer
 
-    # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization) to L channel
-    clahe = cv2.createCLAHE(clipLimit=2.0 * intensity, tileGridSize=(8, 8))
-    l = clahe.apply(l)
+    if upsampler is None:
+        # Determine device
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    # Merge back
-    enhanced_lab = cv2.merge([l, a, b])
-    enhanced = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+        # Initialize Real-ESRGAN model
+        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
 
-    # Denoise while preserving edges
-    enhanced = cv2.fastNlMeansDenoisingColored(enhanced, None, 10, 10, 7, 21)
+        # Use smaller, faster x2 model for quicker startup
+        upsampler = RealESRGANer(
+            scale=2,
+            model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth',
+            model=model,
+            tile=400,
+            tile_pad=10,
+            pre_pad=0,
+            half=False if device == 'cpu' else True,
+            device=device
+        )
 
-    # Sharpen
-    kernel = np.array([[-1,-1,-1],
-                       [-1, 9,-1],
-                       [-1,-1,-1]])
-    sharpened = cv2.filter2D(enhanced, -1, kernel * 0.5 * intensity)
+        # Don't use GFPGAN to avoid huge downloads
+        face_enhancer = None
 
-    # Enhance saturation
-    hsv = cv2.cvtColor(sharpened, cv2.COLOR_BGR2HSV).astype(np.float32)
-    hsv[:, :, 1] = hsv[:, :, 1] * (1 + 0.3 * intensity)  # Increase saturation
-    hsv[:, :, 1] = np.clip(hsv[:, :, 1], 0, 255)
-    result = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
-
-    return result
+    return upsampler, face_enhancer
 
 
 @app.route('/')
@@ -86,17 +89,20 @@ def upload_file():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        # Get intensity from quality slider (map 10-45 to 0.5-1.5)
-        quality = int(request.form.get('render_factor', 35))
-        intensity = 0.5 + (quality - 10) / 35 * 1.0  # Maps 10->0.5, 45->1.5
+        # Read image
+        img = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
 
-        # Read and enhance image
-        img = cv2.imread(filepath)
-        enhanced = enhance_photo(img, intensity)
+        # Get restoration model
+        upsampler_model, _ = get_restorer()
+
+        # Restore the photo using Real-ESRGAN
+        result_path = os.path.join(app.config['RESULT_FOLDER'], f'restored_{filename}')
+
+        # Use Real-ESRGAN for enhancement
+        output, _ = upsampler_model.enhance(img, outscale=2)
 
         # Save result
-        result_path = os.path.join(app.config['RESULT_FOLDER'], f'restored_{filename}')
-        cv2.imwrite(result_path, enhanced)
+        cv2.imwrite(result_path, output)
 
         return jsonify({
             'success': True,
@@ -139,7 +145,6 @@ if __name__ == '__main__':
     print("=" * 60)
     print("\nOpen your browser and navigate to:")
     print("  http://localhost:8080")
-    print("\nUsing fast OpenCV-based enhancement")
-    print("Processing takes ~2-5 seconds per photo")
+    print("\nNote: First restoration may take longer as the model downloads...")
     print("=" * 60)
     app.run(debug=True, host='0.0.0.0', port=8080)

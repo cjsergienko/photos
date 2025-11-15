@@ -1,22 +1,24 @@
 # Photo Restoration Web App
 
-AI-powered web application for restoring and enhancing old photos using Real-ESRGAN neural network.
+Web application for restoring and enhancing old photos using advanced image processing.
 
 ## Features
 
-- **AI-Powered Restoration**: Uses Real-ESRGAN x2 for fast image enhancement
+- **Fast Photo Enhancement**: Uses OpenCV image processing (2-5 seconds per photo!)
 - **Web Interface**: Simple, user-friendly drag-and-drop interface
-- **Adjustable Quality**: Control the quality/speed tradeoff with the render factor slider
+- **Adjustable Quality**: Control enhancement intensity with the quality slider
 - **Side-by-Side Comparison**: View original and restored photos together
 - **Download Results**: Save your restored photos locally
+- **No Downloads Required**: Works instantly, no model downloads needed
 
 ## How It Works
 
-**Real-ESRGAN x2**: Enhances image quality through super-resolution
-- Reduces noise and artifacts
-- Sharpens details
-- Upscales images by 2x while preserving quality
-- Fast model optimized for quick processing (~11MB download)
+**OpenCV-based Enhancement Pipeline:**
+- **Adaptive Contrast**: CLAHE algorithm improves brightness and contrast
+- **Noise Reduction**: Advanced denoising while preserving edges
+- **Sharpening**: Enhances details and textures
+- **Color Enhancement**: Boosts saturation for more vibrant photos
+- **Super Fast**: 2-5 seconds per photo (vs 5+ minutes with AI models)
 
 ## Quick Start (Recommended)
 
@@ -40,11 +42,9 @@ Run the photo restoration app
 
 Claude Code will automatically:
 - Create a virtual environment
-- Install all dependencies
+- Install all dependencies (Flask, OpenCV, NumPy)
 - Start the web server
 - Open the app at http://localhost:8080
-
-**Note**: On first photo upload, the app will download the AI model (~11MB) which takes 10-30 seconds.
 
 ## Manual Installation (Advanced)
 
@@ -54,19 +54,16 @@ If you prefer to set up manually:
 
 - Python 3.8 or higher
 - pip (Python package manager)
-- 4GB+ RAM recommended
-- Optional: NVIDIA GPU with CUDA for faster processing
+- 1GB+ RAM
 
 ### Setup Steps
 
 1. Clone the repository and navigate to it
 2. Create a virtual environment: `python3 -m venv venv`
 3. Activate it: `source venv/bin/activate` (On Windows: `venv\Scripts\activate`)
-4. Install dependencies: `pip install -r requirements.txt`
+4. Install dependencies: `pip install -r requirements.txt` (takes ~30 seconds)
 5. Run the app: `python app.py`
 6. Open http://localhost:8080 in your browser
-
-**Note**: First time setup may take several minutes as it downloads PyTorch and other large dependencies.
 
 ## How to Use
 
@@ -83,19 +80,19 @@ If you prefer to set up manually:
 
 ## Quality Settings Explained
 
-The **render_factor** parameter controls the quality of the restoration:
+The quality slider controls the enhancement intensity:
 
-- **Lower values (10-20)**: Faster processing but may miss fine details
-- **Medium values (25-35)**: Good balance between quality and speed
-- **Higher values (40-45)**: Best quality but slower, especially for large images
+- **Lower values (10-20)**: Subtle enhancement, preserves original look
+- **Medium values (25-35)**: Balanced enhancement (recommended)
+- **Higher values (40-45)**: Maximum enhancement, most dramatic results
 
 ## Tips for Best Results
 
 1. **Scan at high resolution**: The better your input, the better the output
-2. **Start with medium quality**: Test with render_factor=35 first
+2. **Start with medium quality**: Use slider value 30-35 for balanced results
 3. **Keep originals**: Always preserve your original scans
-4. **GPU acceleration**: If you have an NVIDIA GPU, the processing will be much faster
-5. **Manual touchup**: Consider manual editing for important areas after AI restoration
+4. **Adjust intensity**: If results look too processed, lower the quality slider
+5. **Compare before/after**: Use the side-by-side view to find the perfect setting
 
 ## Project Structure
 
@@ -112,36 +109,38 @@ photos/
 
 ## Troubleshooting
 
-### Model Download Issues
-On first run, DeOldify will download pre-trained models (~300MB). If this fails:
-- Check your internet connection
-- Ensure you have enough disk space
-- Try running again
-
-### Out of Memory Errors
-If you get memory errors:
-- Reduce the render_factor
-- Resize your image before uploading
-- Close other applications
-
 ### Slow Processing
-- First restoration is always slower (model initialization)
-- Large images take longer
-- Consider using GPU if available
-- Lower the render_factor
+If processing takes longer than 10 seconds:
+- Large images (>10MB) take longer
+- Try reducing image resolution before uploading
+- Close other applications to free up CPU
+
+### Results Look Over-Processed
+- Lower the quality slider (try 20-25)
+- Some photos look better with subtle enhancement
+
+### No Visible Difference
+- Try increasing the quality slider (try 40-45)
+- Very dark or very bright photos may need manual adjustment first
 
 ## Technologies Used
 
-- **Real-ESRGAN**: Super-resolution model for image enhancement
-- **Flask**: Web framework
-- **PyTorch**: Deep learning framework
-- **OpenCV**: Image processing library
+- **OpenCV**: Advanced computer vision and image processing library
+- **Flask**: Lightweight web framework
+- **NumPy**: Numerical computing library
+
+## Image Processing Techniques
+
+- **CLAHE (Contrast Limited Adaptive Histogram Equalization)**: Improves local contrast
+- **Non-Local Means Denoising**: Reduces noise while preserving edges
+- **Unsharp Masking**: Enhances fine details and sharpness
+- **HSV Color Enhancement**: Boosts color saturation
 
 ## References
 
-- [Real-ESRGAN GitHub](https://github.com/xinntao/Real-ESRGAN)
-- [Real-ESRGAN Paper](https://arxiv.org/abs/2107.10833)
+- [OpenCV Documentation](https://docs.opencv.org/)
+- [CLAHE Algorithm](https://en.wikipedia.org/wiki/Adaptive_histogram_equalization)
 
 ## License
 
-This project uses Real-ESRGAN which is BSD-3-Clause licensed. See individual component licenses for details.
+This project is open source. OpenCV is licensed under Apache 2.0.
