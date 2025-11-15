@@ -22,40 +22,58 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def enhance_photo(img, intensity=1.0):
+def enhance_photo(img, contrast=50, denoise=50, sharpen=50, saturation=50, brightness=50):
     """
-    Enhance old photos using OpenCV
-    - Reduces noise
-    - Improves contrast and sharpness
-    - Enhances colors
-    - Much faster than AI models
+    Enhance old photos using OpenCV with customizable parameters
+
+    Parameters:
+    - contrast: 0-100 (adaptive contrast enhancement)
+    - denoise: 0-100 (noise reduction strength)
+    - sharpen: 0-100 (sharpening strength)
+    - saturation: 0-100 (color saturation boost)
+    - brightness: 0-100 (brightness adjustment)
     """
-    # Convert to LAB color space for better processing
-    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-    l, a, b = cv2.split(lab)
+    result = img.copy()
 
-    # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization) to L channel
-    clahe = cv2.createCLAHE(clipLimit=2.0 * intensity, tileGridSize=(8, 8))
-    l = clahe.apply(l)
+    # Brightness adjustment
+    if brightness != 50:
+        brightness_factor = (brightness - 50) / 50.0  # -1 to 1
+        result = cv2.convertScaleAbs(result, alpha=1.0, beta=brightness_factor * 30)
 
-    # Merge back
-    enhanced_lab = cv2.merge([l, a, b])
-    enhanced = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+    # Contrast enhancement using CLAHE
+    if contrast > 0:
+        lab = cv2.cvtColor(result, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
 
-    # Denoise while preserving edges
-    enhanced = cv2.fastNlMeansDenoisingColored(enhanced, None, 10, 10, 7, 21)
+        clip_limit = (contrast / 50.0) * 2.0  # 0 to 4
+        clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(8, 8))
+        l = clahe.apply(l)
+
+        enhanced_lab = cv2.merge([l, a, b])
+        result = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+
+    # Denoise
+    if denoise > 0:
+        h = int((denoise / 100.0) * 15)  # 0 to 15
+        if h > 0:
+            result = cv2.fastNlMeansDenoisingColored(result, None, h, h, 7, 21)
 
     # Sharpen
-    kernel = np.array([[-1,-1,-1],
-                       [-1, 9,-1],
-                       [-1,-1,-1]])
-    sharpened = cv2.filter2D(enhanced, -1, kernel * 0.5 * intensity)
+    if sharpen > 0:
+        sharpen_strength = sharpen / 100.0
+        kernel = np.array([[-1,-1,-1],
+                          [-1, 9,-1],
+                          [-1,-1,-1]])
+        sharpened = cv2.filter2D(result, -1, kernel * sharpen_strength)
+        result = cv2.addWeighted(result, 1 - sharpen_strength * 0.5, sharpened, sharpen_strength * 0.5, 0)
 
-    # Enhance saturation
-    hsv = cv2.cvtColor(sharpened, cv2.COLOR_BGR2HSV).astype(np.float32)
-    hsv[:, :, 1] = hsv[:, :, 1] * (1 + 0.3 * intensity)  # Increase saturation
-    hsv[:, :, 1] = np.clip(hsv[:, :, 1], 0, 255)
-    result = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+    # Color saturation
+    if saturation != 50:
+        hsv = cv2.cvtColor(result, cv2.COLOR_BGR2HSV).astype(np.float32)
+        saturation_factor = saturation / 50.0  # 0 to 2
+        hsv[:, :, 1] = hsv[:, :, 1] * saturation_factor
+        hsv[:, :, 1] = np.clip(hsv[:, :, 1], 0, 255)
+        result = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
 
     return result
 
@@ -86,13 +104,16 @@ def upload_file():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        # Get intensity from quality slider (map 10-45 to 0.5-1.5)
-        quality = int(request.form.get('render_factor', 35))
-        intensity = 0.5 + (quality - 10) / 35 * 1.0  # Maps 10->0.5, 45->1.5
+        # Get parameters from sliders (0-100 range)
+        contrast = int(request.form.get('contrast', 50))
+        denoise = int(request.form.get('denoise', 50))
+        sharpen = int(request.form.get('sharpen', 50))
+        saturation = int(request.form.get('saturation', 50))
+        brightness = int(request.form.get('brightness', 50))
 
         # Read and enhance image
         img = cv2.imread(filepath)
-        enhanced = enhance_photo(img, intensity)
+        enhanced = enhance_photo(img, contrast, denoise, sharpen, saturation, brightness)
 
         # Save result
         result_path = os.path.join(app.config['RESULT_FOLDER'], f'restored_{filename}')

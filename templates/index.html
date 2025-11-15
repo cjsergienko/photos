@@ -290,15 +290,49 @@
             </div>
 
             <div class="settings">
+                <h3 style="margin-bottom: 15px; color: #333;">Adjustment Controls</h3>
+
                 <div class="setting-item">
                     <label>
-                        Quality Level: <span class="slider-value" id="renderValue">35</span>
+                        Contrast: <span class="slider-value" id="contrastValue">50</span>
                     </label>
-                    <input type="range" id="renderFactor" min="10" max="45" value="35">
-                    <small style="color: #666; display: block; margin-top: 5px;">
-                        Higher values = better quality but slower processing (10=fast/lower quality, 45=slow/best quality)
-                    </small>
+                    <input type="range" id="contrastSlider" min="0" max="100" value="50">
+                    <small style="color: #666;">Adjust image contrast (0=none, 50=balanced, 100=maximum)</small>
                 </div>
+
+                <div class="setting-item">
+                    <label>
+                        Noise Reduction: <span class="slider-value" id="denoiseValue">50</span>
+                    </label>
+                    <input type="range" id="denoiseSlider" min="0" max="100" value="50">
+                    <small style="color: #666;">Reduce grain and noise (0=none, 50=moderate, 100=strong)</small>
+                </div>
+
+                <div class="setting-item">
+                    <label>
+                        Sharpness: <span class="slider-value" id="sharpenValue">50</span>
+                    </label>
+                    <input type="range" id="sharpenSlider" min="0" max="100" value="50">
+                    <small style="color: #666;">Enhance details and edges (0=none, 50=moderate, 100=sharp)</small>
+                </div>
+
+                <div class="setting-item">
+                    <label>
+                        Color Saturation: <span class="slider-value" id="saturationValue">50</span>
+                    </label>
+                    <input type="range" id="saturationSlider" min="0" max="100" value="50">
+                    <small style="color: #666;">Boost color vibrancy (0=grayscale, 50=normal, 100=vivid)</small>
+                </div>
+
+                <div class="setting-item">
+                    <label>
+                        Brightness: <span class="slider-value" id="brightnessValue">50</span>
+                    </label>
+                    <input type="range" id="brightnessSlider" min="0" max="100" value="50">
+                    <small style="color: #666;">Adjust brightness (0=darker, 50=normal, 100=brighter)</small>
+                </div>
+
+                <button id="resetBtn" style="background: #666; margin-top: 10px; padding: 10px 20px; font-size: 0.9rem;">Reset to Defaults</button>
             </div>
 
             <button id="uploadBtn" disabled>Upload and Restore</button>
@@ -336,15 +370,33 @@
         const loading = document.getElementById('loading');
         const results = document.getElementById('results');
         const errorMsg = document.getElementById('errorMsg');
-        const renderFactor = document.getElementById('renderFactor');
-        const renderValue = document.getElementById('renderValue');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Slider elements
+        const sliders = {
+            contrast: { slider: document.getElementById('contrastSlider'), value: document.getElementById('contrastValue') },
+            denoise: { slider: document.getElementById('denoiseSlider'), value: document.getElementById('denoiseValue') },
+            sharpen: { slider: document.getElementById('sharpenSlider'), value: document.getElementById('sharpenValue') },
+            saturation: { slider: document.getElementById('saturationSlider'), value: document.getElementById('saturationValue') },
+            brightness: { slider: document.getElementById('brightnessSlider'), value: document.getElementById('brightnessValue') }
+        };
 
         let selectedFile = null;
         let restoredFilename = null;
 
-        // Update slider value display
-        renderFactor.addEventListener('input', (e) => {
-            renderValue.textContent = e.target.value;
+        // Update all slider value displays
+        Object.keys(sliders).forEach(key => {
+            sliders[key].slider.addEventListener('input', (e) => {
+                sliders[key].value.textContent = e.target.value;
+            });
+        });
+
+        // Reset button
+        resetBtn.addEventListener('click', () => {
+            Object.keys(sliders).forEach(key => {
+                sliders[key].slider.value = 50;
+                sliders[key].value.textContent = '50';
+            });
         });
 
         // Click to upload
@@ -395,7 +447,11 @@
 
             const formData = new FormData();
             formData.append('file', selectedFile);
-            formData.append('render_factor', renderFactor.value);
+
+            // Add all slider values
+            Object.keys(sliders).forEach(key => {
+                formData.append(key, sliders[key].slider.value);
+            });
 
             uploadBtn.disabled = true;
             loading.classList.add('show');
