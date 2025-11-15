@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Restoration - AI Powered</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .upload-section {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .upload-area.drag-over {
+            border-color: #764ba2;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .settings {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 8px;
+        }
+
+        .setting-item {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .slider-value {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .results {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .image-container {
+            position: relative;
+        }
+
+        .image-container h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        .image-container img {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .download-btn {
+            margin-top: 30px;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .info-box {
+            background: #e8f4fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h4 {
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            color: #555;
+            line-height: 1.5;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Photo Restoration</h1>
+            <p class="subtitle">Restore and enhance your old photos using AI</p>
+        </header>
+
+        <div class="upload-section">
+            <div class="info-box">
+                <h4>How it works</h4>
+                <p>Upload your old, faded, or damaged photos and our AI will restore them. The model can improve colors, reduce noise, and enhance overall quality. Higher quality settings produce better results but take longer to process.</p>
+            </div>
+
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📸</div>
+                <div class="upload-text">Click to upload or drag and drop</div>
+                <div class="upload-hint">Supported formats: PNG, JPG, JPEG, GIF, BMP (Max 16MB)</div>
+                <input type="file" id="fileInput" accept="image/*">
+            </div>
+
+            <div class="settings">
+                <div class="setting-item">
+                    <label>
+                        Quality Level: <span class="slider-value" id="renderValue">35</span>
+                    </label>
+                    <input type="range" id="renderFactor" min="10" max="45" value="35">
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Higher values = better quality but slower processing (10=fast/lower quality, 45=slow/best quality)
+                    </small>
+                </div>
+            </div>
+
+            <button id="uploadBtn" disabled>Upload and Restore</button>
+
+            <div class="error" id="errorMsg"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <h3>Restoring your photo...</h3>
+            <p>This may take a minute or two depending on the quality setting and image size.</p>
+        </div>
+
+        <div class="results" id="results">
+            <h2 style="margin-bottom: 20px; color: #333;">✨ Restoration Complete!</h2>
+            <div class="comparison">
+                <div class="image-container">
+                    <h3>Original</h3>
+                    <img id="originalImg" src="" alt="Original">
+                </div>
+                <div class="image-container">
+                    <h3>Restored</h3>
+                    <img id="restoredImg" src="" alt="Restored">
+                </div>
+            </div>
+            <button class="download-btn" id="downloadBtn">Download Restored Photo</button>
+            <button id="newPhotoBtn" onclick="location.reload()">Restore Another Photo</button>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const errorMsg = document.getElementById('errorMsg');
+        const renderFactor = document.getElementById('renderFactor');
+        const renderValue = document.getElementById('renderValue');
+
+        let selectedFile = null;
+        let restoredFilename = null;
+
+        // Update slider value display
+        renderFactor.addEventListener('input', (e) => {
+            renderValue.textContent = e.target.value;
+        });
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // File selected
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showError('Please select an image file');
+                return;
+            }
+
+            if (file.size > 16 * 1024 * 1024) {
+                showError('File size must be less than 16MB');
+                return;
+            }
+
+            selectedFile = file;
+            uploadBtn.disabled = false;
+            uploadArea.querySelector('.upload-text').textContent = `Selected: ${file.name}`;
+            hideError();
+        }
+
+        uploadBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('render_factor', renderFactor.value);
+
+            uploadBtn.disabled = true;
+            loading.classList.add('show');
+            hideError();
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Upload failed');
+                }
+
+                // Show results
+                document.getElementById('originalImg').src = data.original;
+                document.getElementById('restoredImg').src = data.restored;
+                restoredFilename = data.restored.split('/').pop();
+
+                loading.classList.remove('show');
+                results.classList.add('show');
+
+            } catch (error) {
+                loading.classList.remove('show');
+                uploadBtn.disabled = false;
+                showError(error.message);
+            }
+        });
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (restoredFilename) {
+                window.location.href = `/download/${restoredFilename}`;
+            }
+        });
+
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.classList.add('show');
+        }
+
+        function hideError() {
+            errorMsg.classList.remove('show');
+        }
+    </script>
+</body>
+</html>
