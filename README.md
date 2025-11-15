@@ -1,10 +1,10 @@
 # Photo Restoration Web App
 
-AI-powered web application for restoring and enhancing old photos using DeOldify neural network.
+AI-powered web application for restoring and enhancing old photos using Real-ESRGAN and GFPGAN neural networks.
 
 ## Features
 
-- **AI-Powered Restoration**: Uses DeOldify, a state-of-the-art neural network for photo colorization and restoration
+- **AI-Powered Restoration**: Uses Real-ESRGAN for image enhancement and GFPGAN for face restoration
 - **Web Interface**: Simple, user-friendly drag-and-drop interface
 - **Adjustable Quality**: Control the quality/speed tradeoff with the render factor slider
 - **Side-by-Side Comparison**: View original and restored photos together
@@ -12,11 +12,17 @@ AI-powered web application for restoring and enhancing old photos using DeOldify
 
 ## How It Works
 
-DeOldify uses deep learning (specifically GANs - Generative Adversarial Networks) to:
-- Restore faded colors
-- Reduce noise and grain
-- Enhance overall image quality
-- Colorize black and white photos
+This app uses two powerful AI models:
+
+**Real-ESRGAN**: Enhances image quality through super-resolution
+- Reduces noise and artifacts
+- Sharpens details
+- Upscales images while preserving quality
+
+**GFPGAN**: Specialized in restoring faces
+- Enhances facial features
+- Fixes degraded face photos
+- Works on portraits and group photos
 
 ## Installation
 
@@ -124,17 +130,19 @@ If you get memory errors:
 
 ## Technologies Used
 
-- **DeOldify**: Deep learning model for photo restoration
+- **Real-ESRGAN**: Super-resolution model for image enhancement
+- **GFPGAN**: GAN-based face restoration model
 - **Flask**: Web framework
 - **PyTorch**: Deep learning framework
-- **FastAI**: Neural network training library
+- **OpenCV**: Image processing library
 
 ## References
 
-- [DeOldify GitHub](https://github.com/jantic/DeOldify)
-- [DeOldify Paper](https://arxiv.org/abs/1803.07422)
-- [FastAI Documentation](https://docs.fast.ai/)
+- [Real-ESRGAN GitHub](https://github.com/xinntao/Real-ESRGAN)
+- [GFPGAN GitHub](https://github.com/TencentARC/GFPGAN)
+- [Real-ESRGAN Paper](https://arxiv.org/abs/2107.10833)
+- [GFPGAN Paper](https://arxiv.org/abs/2101.04061)
 
 ## License
 
-This project uses DeOldify which is MIT licensed. See individual component licenses for details.
+This project uses Real-ESRGAN and GFPGAN which are BSD-3-Clause licensed. See individual component licenses for details.

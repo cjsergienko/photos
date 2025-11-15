@@ -2,10 +2,11 @@ import os
 from flask import Flask, render_template, request, send_file, jsonify
 from werkzeug.utils import secure_filename
 from pathlib import Path
+import cv2
 import torch
-from deoldify import device
-from deoldify.device_id import DeviceId
-from deoldify.visualize import get_image_colorizer
+from basicsr.archs.rrdbnet_arch import RRDBNet
+from realesrgan import RealESRGANer
+from gfpgan import GFPGANer
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -13,16 +14,19 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['RESULT_FOLDER'] = 'results'
+app.config['MODEL_FOLDER'] = 'models'
 
 # Create necessary directories
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['RESULT_FOLDER'], exist_ok=True)
+os.makedirs(app.config['MODEL_FOLDER'], exist_ok=True)
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp'}
 
-# Initialize the colorizer (will be loaded on first use)
-colorizer = None
+# Initialize the restorer (will be loaded on first use)
+upsampler = None
+face_enhancer = None
 
 
 def allowed_file(filename):
@@ -30,14 +34,39 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def get_colorizer():
-    """Lazy load the colorizer model"""
-    global colorizer
-    if colorizer is None:
-        # Set device to CPU or GPU
-        device.set(device=DeviceId.GPU0 if torch.cuda.is_available() else DeviceId.CPU)
-        colorizer = get_image_colorizer(artistic=True)
-    return colorizer
+def get_restorer():
+    """Lazy load the restoration models"""
+    global upsampler, face_enhancer
+
+    if upsampler is None:
+        # Determine device
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+        # Initialize Real-ESRGAN model
+        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
+
+        upsampler = RealESRGANer(
+            scale=4,
+            model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth',
+            model=model,
+            tile=0,
+            tile_pad=10,
+            pre_pad=0,
+            half=False if device == 'cpu' else True,
+            device=device
+        )
+
+        # Initialize GFPGAN for face enhancement
+        face_enhancer = GFPGANer(
+            model_path='https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth',
+            upscale=4,
+            arch='clean',
+            channel_multiplier=2,
+            bg_upsampler=upsampler,
+            device=device
+        )
+
+    return upsampler, face_enhancer
 
 
 @app.route('/')
@@ -66,23 +95,34 @@ def upload_file():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        # Get render factor from request (default to 35)
-        render_factor = int(request.form.get('render_factor', 35))
-        render_factor = max(10, min(45, render_factor))  # Clamp between 10 and 45
+        # Get quality setting from request (default to 35)
+        quality = int(request.form.get('render_factor', 35))
+        use_face_enhance = quality > 25  # Use face enhancement for medium-high quality
+
+        # Read image
+        img = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
+
+        # Get restoration models
+        upsampler_model, face_enhancer_model = get_restorer()
 
         # Restore the photo
-        model = get_colorizer()
         result_path = os.path.join(app.config['RESULT_FOLDER'], f'restored_{filename}')
 
-        # Run the restoration
-        result = model.get_transformed_image(
-            path=filepath,
-            render_factor=render_factor,
-            post_process=True
-        )
+        if use_face_enhance and face_enhancer_model is not None:
+            # Use GFPGAN for face enhancement (better for photos with people)
+            _, _, output = face_enhancer_model.enhance(
+                img,
+                has_aligned=False,
+                only_center_face=False,
+                paste_back=True,
+                weight=0.5
+            )
+        else:
+            # Use Real-ESRGAN for general enhancement
+            output, _ = upsampler_model.enhance(img, outscale=2)
 
         # Save result
-        result.save(result_path)
+        cv2.imwrite(result_path, output)
 
         return jsonify({
             'success': True,
@@ -92,6 +132,8 @@ def upload_file():
         })
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': f'Error processing image: {str(e)}'}), 500
 
 
