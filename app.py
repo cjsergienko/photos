@@ -43,28 +43,22 @@ def get_restorer():
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         # Initialize Real-ESRGAN model
-        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
+        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
 
+        # Use smaller, faster x2 model for quicker startup
         upsampler = RealESRGANer(
-            scale=4,
-            model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth',
+            scale=2,
+            model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth',
             model=model,
-            tile=0,
+            tile=400,
             tile_pad=10,
             pre_pad=0,
             half=False if device == 'cpu' else True,
             device=device
         )
 
-        # Initialize GFPGAN for face enhancement
-        face_enhancer = GFPGANer(
-            model_path='https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth',
-            upscale=4,
-            arch='clean',
-            channel_multiplier=2,
-            bg_upsampler=upsampler,
-            device=device
-        )
+        # Don't use GFPGAN to avoid huge downloads
+        face_enhancer = None
 
     return upsampler, face_enhancer
 
@@ -95,31 +89,17 @@ def upload_file():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        # Get quality setting from request (default to 35)
-        quality = int(request.form.get('render_factor', 35))
-        use_face_enhance = quality > 25  # Use face enhancement for medium-high quality
-
         # Read image
         img = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
 
-        # Get restoration models
-        upsampler_model, face_enhancer_model = get_restorer()
+        # Get restoration model
+        upsampler_model, _ = get_restorer()
 
-        # Restore the photo
+        # Restore the photo using Real-ESRGAN
         result_path = os.path.join(app.config['RESULT_FOLDER'], f'restored_{filename}')
 
-        if use_face_enhance and face_enhancer_model is not None:
-            # Use GFPGAN for face enhancement (better for photos with people)
-            _, _, output = face_enhancer_model.enhance(
-                img,
-                has_aligned=False,
-                only_center_face=False,
-                paste_back=True,
-                weight=0.5
-            )
-        else:
-            # Use Real-ESRGAN for general enhancement
-            output, _ = upsampler_model.enhance(img, outscale=2)
+        # Use Real-ESRGAN for enhancement
+        output, _ = upsampler_model.enhance(img, outscale=2)
 
         # Save result
         cv2.imwrite(result_path, output)

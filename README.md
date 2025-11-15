@@ -1,10 +1,10 @@
 # Photo Restoration Web App
 
-AI-powered web application for restoring and enhancing old photos using Real-ESRGAN and GFPGAN neural networks.
+AI-powered web application for restoring and enhancing old photos using Real-ESRGAN neural network.
 
 ## Features
 
-- **AI-Powered Restoration**: Uses Real-ESRGAN for image enhancement and GFPGAN for face restoration
+- **AI-Powered Restoration**: Uses Real-ESRGAN x2 for fast image enhancement
 - **Web Interface**: Simple, user-friendly drag-and-drop interface
 - **Adjustable Quality**: Control the quality/speed tradeoff with the render factor slider
 - **Side-by-Side Comparison**: View original and restored photos together
@@ -12,17 +12,11 @@ AI-powered web application for restoring and enhancing old photos using Real-ESR
 
 ## How It Works
 
-This app uses two powerful AI models:
-
-**Real-ESRGAN**: Enhances image quality through super-resolution
+**Real-ESRGAN x2**: Enhances image quality through super-resolution
 - Reduces noise and artifacts
 - Sharpens details
-- Upscales images while preserving quality
-
-**GFPGAN**: Specialized in restoring faces
-- Enhances facial features
-- Fixes degraded face photos
-- Works on portraits and group photos
+- Upscales images by 2x while preserving quality
+- Fast model optimized for quick processing (~11MB download)
 
 ## Installation
 
@@ -52,6 +46,8 @@ pip install -r requirements.txt
 ```
 
 **Note**: First time setup may take several minutes as it downloads PyTorch and other large dependencies.
+
+**Note**: On first photo upload, the app will download the AI model (~11MB) which takes 10-30 seconds.
 
 ## Usage
 
@@ -131,7 +127,6 @@ If you get memory errors:
 ## Technologies Used
 
 - **Real-ESRGAN**: Super-resolution model for image enhancement
-- **GFPGAN**: GAN-based face restoration model
 - **Flask**: Web framework
 - **PyTorch**: Deep learning framework
 - **OpenCV**: Image processing library
@@ -139,10 +134,8 @@ If you get memory errors:
 ## References
 
 - [Real-ESRGAN GitHub](https://github.com/xinntao/Real-ESRGAN)
-- [GFPGAN GitHub](https://github.com/TencentARC/GFPGAN)
 - [Real-ESRGAN Paper](https://arxiv.org/abs/2107.10833)
-- [GFPGAN Paper](https://arxiv.org/abs/2101.04061)
 
 ## License
 
-This project uses Real-ESRGAN and GFPGAN which are BSD-3-Clause licensed. See individual component licenses for details.
+This project uses Real-ESRGAN which is BSD-3-Clause licensed. See individual component licenses for details.
