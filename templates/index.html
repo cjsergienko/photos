@@ -518,7 +518,7 @@
                 <h2 class="gallery-title">Enhanced Photos</h2>
                 <div>
                     <button class="btn" onclick="downloadAll()">Download All</button>
-                    <button class="btn btn-secondary" onclick="resetToUpload()">Upload More</button>
+                    <button class="btn btn-secondary" onclick="confirmReset()">Reset</button>
                 </div>
             </div>
             <div class="gallery-grid" id="galleryGrid"></div>
@@ -851,12 +851,20 @@
             fileInput.value = '';
         }
 
+        function confirmReset() {
+            if (confirm('Are you sure you want to reset? All enhanced photos and settings will be lost.')) {
+                resetToUpload();
+            }
+        }
+
         function resetToUpload() {
             processedResults = [];
             imageSettings = {};
             imageProcessors = {};
             selectedFiles.clear();
             document.getElementById('gallerySection').style.display = 'none';
+            document.getElementById('detailSection').style.display = 'none';
+            document.getElementById('previewSection').style.display = 'none';
             document.getElementById('uploadSection').style.display = 'block';
             fileInput.value = '';
         }
