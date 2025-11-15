@@ -187,15 +187,24 @@ def download_file(filename):
 
 
 if __name__ == '__main__':
+    import os
+
+    # Get port from environment variable (for production) or use 8080 for local dev
+    port = int(os.environ.get('PORT', 8080))
+    debug = os.environ.get('FLASK_ENV') != 'production'
+
     print("=" * 60)
     print("Photo Restoration Web App - Starting...")
     print("=" * 60)
-    print("\nOpen your browser and navigate to:")
-    print("  http://localhost:8080")
+    print(f"\nServer running on port: {port}")
+    if debug:
+        print("Open your browser and navigate to:")
+        print(f"  http://localhost:{port}")
     print("\n🎨 Two-Step Enhancement:")
     print("  1. Fast OpenCV enhancement (server-side)")
     print("  2. Live slider adjustments (client-side)")
     print("\n⚡ Processing: ~2-5 seconds per photo")
     print("   No model downloads needed!")
     print("=" * 60)
-    app.run(debug=True, host='0.0.0.0', port=8080)
+
+    app.run(debug=debug, host='0.0.0.0', port=port)

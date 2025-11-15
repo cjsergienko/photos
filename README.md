@@ -181,6 +181,35 @@ photos/
 - **Saturation**: HSV color space manipulation
 - **Sharpening**: CSS filter-based enhancement (optimized for performance)
 
+## Deploy to Render (Free)
+
+This app is ready to deploy to Render's free tier:
+
+1. **Fork or use this repository**
+   - Already configured with `render.yaml`
+
+2. **Sign up for Render**
+   - Visit [render.com](https://render.com) and sign up
+   - Connect your GitHub account
+
+3. **Create New Web Service**
+   - Click "New +" → "Web Service"
+   - Connect your GitHub repository
+   - Render will auto-detect the `render.yaml` configuration
+
+4. **Deploy**
+   - Click "Create Web Service"
+   - Render will automatically:
+     - Install dependencies
+     - Start the app with gunicorn
+     - Provide a public URL (e.g., `https://your-app.onrender.com`)
+
+5. **Access your app**
+   - Your app will be live at the provided URL
+   - First request may take 30-60 seconds (free tier sleeps when inactive)
+
+**Note**: Free tier sleeps after 15 minutes of inactivity. The app will wake up automatically when accessed but may take 30-60 seconds to respond.
+
 ## References
 
 - [Real-ESRGAN Paper](https://github.com/xinntao/Real-ESRGAN)
