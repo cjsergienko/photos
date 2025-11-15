@@ -48,14 +48,15 @@ def get_upsampler():
     return upsampler
 
 
-def ai_restore(img):
+def fast_enhance(img):
     """
-    First step: AI-powered restoration using Real-ESRGAN
+    First step: Fast OpenCV-based enhancement
     This runs once on the server when the photo is uploaded
+    Applies balanced enhancement that can be fine-tuned with client-side sliders
     """
-    model = get_upsampler()
-    output, _ = model.enhance(img, outscale=2)
-    return output
+    # Apply moderate enhancement that serves as a good starting point
+    result = enhance_photo(img, contrast=50, denoise=50, sharpen=50, saturation=50, brightness=50)
+    return result
 
 
 def enhance_photo(img, contrast=50, denoise=50, sharpen=50, saturation=50, brightness=50):
@@ -140,21 +141,21 @@ def upload_file():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        # Step 1: AI restoration using Real-ESRGAN (runs once, server-side)
-        print(f"Processing {filename} with Real-ESRGAN...")
+        # Step 1: Fast OpenCV enhancement (runs once, server-side)
+        print(f"Processing {filename} with OpenCV...")
         img = cv2.imread(filepath)
-        ai_restored = ai_restore(img)
+        enhanced = fast_enhance(img)
 
-        # Save AI-restored version
-        result_path = os.path.join(app.config['RESULT_FOLDER'], f'ai_restored_{filename}')
-        cv2.imwrite(result_path, ai_restored)
-        print(f"AI restoration complete!")
+        # Save enhanced version
+        result_path = os.path.join(app.config['RESULT_FOLDER'], f'enhanced_{filename}')
+        cv2.imwrite(result_path, enhanced)
+        print(f"Enhancement complete!")
 
         return jsonify({
             'success': True,
             'original': f'/uploads/{filename}',
-            'ai_restored': f'/results/ai_restored_{filename}',
-            'message': 'AI restoration complete! Adjust sliders for fine-tuning.'
+            'enhanced': f'/results/enhanced_{filename}',
+            'message': 'Enhancement complete! Adjust sliders for fine-tuning.'
         })
 
     except Exception as e:
@@ -191,10 +192,10 @@ if __name__ == '__main__':
     print("=" * 60)
     print("\nOpen your browser and navigate to:")
     print("  http://localhost:8080")
-    print("\n🎨 Two-Step AI Restoration:")
-    print("  1. Real-ESRGAN neural network (server-side)")
+    print("\n🎨 Two-Step Enhancement:")
+    print("  1. Fast OpenCV enhancement (server-side)")
     print("  2. Live slider adjustments (client-side)")
-    print("\n⚡ First run: ~30-60s (downloads AI model)")
-    print("   After that: ~5-10s per photo")
+    print("\n⚡ Processing: ~2-5 seconds per photo")
+    print("   No model downloads needed!")
     print("=" * 60)
     app.run(debug=True, host='0.0.0.0', port=8080)

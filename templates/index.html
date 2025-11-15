@@ -280,7 +280,7 @@
         <div class="upload-section">
             <div class="info-box">
                 <h4>How it works</h4>
-                <p>Upload your old, faded, or damaged photos and get instant enhancement using OpenCV image processing. The app improves contrast, reduces noise, sharpens details, and boosts colors. Processing takes just 2-5 seconds!</p>
+                <p>Upload your old, faded, or damaged photos and get instant enhancement using OpenCV image processing. First, the server applies balanced enhancement (2-5 seconds). Then, adjust sliders in real-time to fine-tune the result in your browser!</p>
             </div>
 
             <div class="upload-area" id="uploadArea">
@@ -348,7 +348,7 @@
         </div>
 
         <div class="results" id="results">
-            <h2 style="margin-bottom: 20px; color: #333;">✨ AI Restoration Complete!</h2>
+            <h2 style="margin-bottom: 20px; color: #333;">✨ Enhancement Complete!</h2>
             <p style="margin-bottom: 20px; color: #666;">Adjust the sliders below to fine-tune the result in real-time</p>
 
             <div class="comparison">
@@ -561,7 +561,7 @@
                     throw new Error('Failed to load AI-restored image');
                 };
 
-                aiRestoredImg.src = data.ai_restored;
+                aiRestoredImg.src = data.enhanced;
 
             } catch (error) {
                 loading.classList.remove('show');
