@@ -34,10 +34,12 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def remove_artifacts(img):
+def remove_artifacts(img, return_mask=False):
     """
     Remove bright dust spots, scratches, and lines from old photos.
     Only targets artifacts without degrading flat areas like sky or snow.
+
+    If return_mask=True, returns (result, mask) tuple for preview purposes.
     """
     result = img.copy()
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -70,6 +72,8 @@ def remove_artifacts(img):
     num_pixels = np.sum(filtered_mask > 0)
     if num_pixels > 50000:
         print(f"Warning: Too many artifact pixels ({num_pixels}), skipping to avoid damage")
+        if return_mask:
+            return result, filtered_mask
         return result
 
     # 5. Inpaint only the artifact areas
@@ -79,6 +83,8 @@ def remove_artifacts(img):
     else:
         print("No artifacts detected")
 
+    if return_mask:
+        return result, filtered_mask
     return result
 
 
@@ -515,9 +521,22 @@ def fine_tune():
                 traceback.print_exc()
 
         # Apply noise reduction if requested (removes dust spots/scratches)
+        mask_filename = None
+        mask_url = None
         if use_noise_reduction:
             print(f"Applying noise reduction to {filename}...")
-            img = remove_artifacts(img)
+            img, artifact_mask = remove_artifacts(img, return_mask=True)
+            # Save the mask for preview
+            mask_filename = f'mask_{filename}'
+            mask_path = os.path.join(app.config['RESULT_FOLDER'], mask_filename)
+            # Convert mask to 3-channel for better visibility
+            mask_colored = cv2.cvtColor(artifact_mask, cv2.COLOR_GRAY2BGR)
+            # Make detected areas red on black background for better visibility
+            mask_preview = np.zeros_like(img)
+            mask_preview[artifact_mask > 0] = [0, 0, 255]  # Red color for detected artifacts
+            cv2.imwrite(mask_path, mask_preview)
+            mask_url = f'/results/{mask_filename}'
+            print(f"Saved mask preview to {mask_filename}")
 
         # Apply standard enhancement if requested
         if use_enhance:
@@ -531,12 +550,18 @@ def fine_tune():
 
         print(f"Fine tuning complete for {filename}!")
 
-        return jsonify({
+        response_data = {
             'success': True,
             'result_url': f'/results/{result_filename}',
             'result_filename': result_filename,
             'message': 'Photo processed successfully!'
-        })
+        }
+
+        if mask_url:
+            response_data['mask_url'] = mask_url
+            response_data['mask_filename'] = mask_filename
+
+        return jsonify(response_data)
 
     except Exception as e:
         import traceback
