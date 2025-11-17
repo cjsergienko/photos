@@ -4,13 +4,19 @@ Web application for restoring and enhancing old photos using AI neural networks 
 
 ## Features
 
-- **AI-Powered Restoration**: Real-ESRGAN neural network for superior image quality
+### Batch Enhancement
+- **Fast OpenCV Processing**: Quick enhancement for multiple photos
 - **Real-Time Adjustments**: Live slider controls for instant visual feedback
-- **Two-Step Architecture**: AI enhancement first, then fine-tune in your browser
-- **Web Interface**: Simple, user-friendly drag-and-drop interface
-- **Customizable Results**: 5 adjustment sliders (Contrast, Denoise, Sharpen, Saturation, Brightness)
-- **Side-by-Side Comparison**: View original and AI-restored photos together
-- **Download Results**: Save your restored photos locally
+- **Batch Upload**: Process multiple photos at once
+- **Customizable Results**: 5 adjustment sliders (Contrast, Noise Reduction, Sharpen, Saturation, Brightness)
+- **Download All**: Batch download as ZIP file
+
+### Fine Tuning (Advanced AI)
+- **DeOldify Colorization**: AI-powered colorization of black & white photos
+- **GFPGAN Face Restoration**: Deep learning enhancement for facial features
+- **Real-ESRGAN Enhancement**: State-of-the-art image quality improvement
+- **Artifact Removal**: Intelligent dust spot and scratch detection
+- **Heavy Processing**: Designed for single photos requiring maximum quality
 
 ## How It Works
 
@@ -34,9 +40,38 @@ Web application for restoring and enhancing old photos using AI neural networks 
   - **Brightness**: Fine-tune overall brightness
 - All adjustments happen in real-time in your browser
 
-## Quick Start (Recommended)
+## Quick Start (macOS)
 
-The easiest way to run this application is using Claude Code:
+### Automated Installation
+
+1. **Clone this repository:**
+```bash
+git clone https://github.com/cjsergienko/photos.git
+cd photos
+```
+
+2. **Run the install script:**
+```bash
+./install.sh
+```
+
+This will automatically:
+- Create a virtual environment
+- Install all dependencies (Flask, OpenCV, PyTorch, GFPGAN, Real-ESRGAN, DeOldify)
+- Create necessary directories
+- Set up the complete AI restoration pipeline
+
+3. **Start the application:**
+```bash
+source venv/bin/activate
+python app.py
+```
+
+4. **Open your browser:**
+   - Navigate to http://localhost:8080
+   - Use sidebar to switch between Batch Enhancement and Fine Tuning
+
+### Using Claude Code (Alternative)
 
 1. **Clone this repository:**
 ```bash
@@ -54,12 +89,6 @@ cd photos
 Run the photo restoration app
 ```
 
-Claude Code will automatically:
-- Create a virtual environment
-- Install all dependencies (Flask, OpenCV, NumPy)
-- Start the web server
-- Open the app at http://localhost:8080
-
 ## Manual Installation (Advanced)
 
 If you prefer to set up manually:
@@ -68,16 +97,28 @@ If you prefer to set up manually:
 
 - Python 3.8 or higher
 - pip (Python package manager)
-- 1GB+ RAM
+- 4GB+ RAM (recommended for AI models)
+- 2GB+ disk space (for AI model downloads)
 
 ### Setup Steps
 
 1. Clone the repository and navigate to it
 2. Create a virtual environment: `python3 -m venv venv`
 3. Activate it: `source venv/bin/activate` (On Windows: `venv\Scripts\activate`)
-4. Install dependencies: `pip install -r requirements.txt` (takes ~30 seconds)
-5. Run the app: `python app.py`
-6. Open http://localhost:8080 in your browser
+4. Install core dependencies:
+```bash
+pip install flask opencv-python-headless numpy werkzeug
+```
+5. Install AI dependencies (optional, for Fine Tuning):
+```bash
+pip install torch torchvision torchaudio
+pip install basicsr realesrgan gfpgan
+pip install deoldify fastai==1.0.61
+```
+6. Run the app: `python app.py`
+7. Open http://localhost:8080 in your browser
+
+**Note:** AI models (~750MB total) are downloaded automatically on first use.
 
 ## How to Use
 
@@ -121,9 +162,12 @@ If you prefer to set up manually:
 ```
 photos/
 ├── app.py                   # Flask web application (AI processing)
+├── install.sh              # macOS installation script
 ├── requirements.txt         # Python dependencies
 ├── templates/
-│   └── index.html          # Web interface with real-time controls
+│   ├── base.html           # Base template with sidebar navigation
+│   ├── batch.html          # Batch enhancement interface
+│   └── fine_tuning.html    # Fine tuning with AI restoration
 ├── static/
 │   └── imageProcessor.js   # Client-side image adjustment engine
 ├── uploads/                # Uploaded photos (created automatically)
@@ -157,15 +201,17 @@ photos/
 
 ### Server-Side (AI Processing)
 - **Real-ESRGAN**: State-of-the-art neural network for image super-resolution
+- **GFPGAN**: Deep learning face restoration
+- **DeOldify**: AI colorization for black & white photos
 - **PyTorch**: Deep learning framework
 - **Flask**: Lightweight web framework
-- **OpenCV**: Computer vision library
+- **OpenCV**: Computer vision library (CLAHE, denoising, inpainting)
 - **NumPy**: Numerical computing
 
 ### Client-Side (Live Adjustments)
 - **Canvas API**: Browser-based real-time image manipulation
 - **JavaScript**: Client-side image processing engine
-- **HTML5**: Modern web interface
+- **HTML5**: Modern web interface with sidebar navigation
 
 ## Image Processing Techniques
 
@@ -213,6 +259,8 @@ This app is ready to deploy to Render's free tier:
 ## References
 
 - [Real-ESRGAN Paper](https://github.com/xinntao/Real-ESRGAN)
+- [GFPGAN Project](https://github.com/TencentARC/GFPGAN)
+- [DeOldify Project](https://github.com/jantic/DeOldify)
 - [OpenCV Documentation](https://docs.opencv.org/)
 - [Canvas API Reference](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
 

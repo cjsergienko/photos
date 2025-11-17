@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Restoration - AI Powered</title>
+    <script src="/static/imageProcessor.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 30px 20px;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .sidebar-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .sidebar-logo {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .sidebar-title {
+            font-size: 1.3rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            color: #555;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background: #f0f2ff;
+            color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .nav-item.active:hover {
+            transform: translateX(5px);
+        }
+
+        .nav-icon {
+            margin-right: 12px;
+            font-size: 1.2rem;
+        }
+
+        .sidebar-footer {
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #999;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .page-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .page-header .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .content-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Common Styles */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.5);
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .success-message {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+                padding: 20px 10px;
+            }
+
+            .sidebar-header {
+                margin-bottom: 20px;
+            }
+
+            .sidebar-title,
+            .sidebar-footer {
+                display: none;
+            }
+
+            .nav-item {
+                padding: 12px;
+                text-align: center;
+            }
+
+            .nav-icon {
+                margin-right: 0;
+                font-size: 1.4rem;
+            }
+
+            .nav-item span:not(.nav-icon) {
+                display: none;
+            }
+        }
+    </style>
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">📸</div>
+            <div class="sidebar-title">Photo Restoration</div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-item {% if active_page == 'batch' %}active{% endif %}">
+                <span class="nav-icon">🖼️</span>
+                <span>Batch Enhancement</span>
+            </a>
+            <a href="/fine-tuning" class="nav-item {% if active_page == 'fine_tuning' %}active{% endif %}">
+                <span class="nav-icon">🎨</span>
+                <span>Fine Tuning</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            AI-Powered Tools
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1>{% block page_title %}Photo Restoration{% endblock %}</h1>
+            <p class="subtitle">{% block page_subtitle %}{% endblock %}</p>
+        </div>
+
+        <div class="content-container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
